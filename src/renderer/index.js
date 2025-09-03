@@ -7,6 +7,30 @@ const llmAnswerEl = document.getElementById('llmAnswer');
 const gameStatusEl = document.getElementById('gameStatus');
 const overlayRoot = document.querySelector('.overlay');
 
+// Minimal, safe markdown renderer (escape first)
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function mdToSafeHtml(md) {
+  const escaped = escapeHtml(md);
+  // code
+  let html = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // bold then italic
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
+  // links
+  html = html.replace(/(https?:\/\/[^\s)]+)(?![^<]*>)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+  // line breaks
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
 // Resize helper
 async function reportSize() {
   if (!overlayRoot) return;
@@ -92,7 +116,7 @@ llmAskBtn.addEventListener('click', async () => {
     llmAnswerEl.textContent = res?.message || 'LLM error';
     return;
   }
-  llmAnswerEl.textContent = res.text || 'No answer.';
+  llmAnswerEl.innerHTML = mdToSafeHtml(res.text || 'No answer.');
   // Ensure window resizes to fit the new answer text
   reportSize();
 });

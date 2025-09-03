@@ -3,6 +3,7 @@ const lockBtn = document.getElementById('lockBtn');
 const closeBtn = document.getElementById('closeBtn');
 const llmInput = document.getElementById('llmInput');
 const llmAskBtn = document.getElementById('llmAskBtn');
+const llmClearBtn = document.getElementById('llmClearBtn');
 const llmAnswerEl = document.getElementById('llmAnswer');
 const gameStatusEl = document.getElementById('gameStatus');
 const llmStatusEl = document.getElementById('llmStatus');
@@ -122,6 +123,8 @@ llmAskBtn.addEventListener('click', async () => {
     llmAnswerEl.textContent = 'Enter a question.';
     return;
   }
+  // Clear input after capturing the question
+  llmInput.value = '';
   llmAnswerEl.textContent = 'Analyzing…';
   const res = await window.overlay.llmQuery(q);
   if (!res || res.error) {
@@ -132,6 +135,24 @@ llmAskBtn.addEventListener('click', async () => {
   // Ensure window resizes to fit the new answer text
   reportSize();
 });
+
+// Pressing Enter in the input triggers Ask
+llmInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    llmAskBtn.click();
+  }
+});
+
+// Clear button: clears input and answer and shrinks overlay if needed
+if (llmClearBtn) {
+  llmClearBtn.addEventListener('click', () => {
+    llmInput.value = '';
+    llmAnswerEl.textContent = '';
+    reportSize();
+    llmInput.focus();
+  });
+}
 
 // Initial load
 syncLockBtn();

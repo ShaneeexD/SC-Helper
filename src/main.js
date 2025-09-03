@@ -61,7 +61,7 @@ function createWindow() {
   Menu.setApplicationMenu(null);
 
   mainWindow = new BrowserWindow({
-    width: 560,
+    width: 580,
     height: 220,
     frame: false,
     transparent: true,
@@ -239,7 +239,7 @@ function registerIpcHandlers() {
     const bounds = mainWindow.getBounds();
     const display = screen.getDisplayMatching(bounds) || screen.getPrimaryDisplay();
     const maxH = Math.floor((display?.workAreaSize?.height || 800) * 0.9);
-    const minH = 140;
+    const minH = 170; // a bit taller to avoid cutoff when only a few panels are visible
     // Add small padding for comfort
     const desired = Math.ceil(Number(contentHeight) || 0) + 12;
     const targetH = Math.min(Math.max(desired, minH), maxH);

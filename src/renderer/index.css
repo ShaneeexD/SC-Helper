@@ -2,12 +2,13 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 body { background: transparent; font-family: 'Rajdhani', system-ui, Segoe UI, Roboto, Arial, sans-serif; color: #e7f0ff; letter-spacing: 0.2px; }
 
 .overlay { 
+  position: relative;
   background: rgba(90, 150, 255, 0.14);
   border: 1px solid rgba(140, 190, 255, 0.28);
   border-radius: 8px;
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-  padding: 10px;
+  padding: 10px 10px 16px; /* extra bottom padding to avoid cut off when panels hidden */
   box-shadow: 0 0 20px rgba(100, 170, 255, 0.25) inset, 0 0 12px rgba(60, 140, 255, 0.18);
 }
 
@@ -49,8 +50,18 @@ body { background: transparent; font-family: 'Rajdhani', system-ui, Segoe UI, Ro
 .btn:hover { background: rgba(120,180,255,0.3); }
 .btn:active { transform: translateY(1px); }
 
-input { background: rgba(140,180,255,0.12); border: 1px solid rgba(140,190,255,0.28); color: #e7f0ff; padding: 6px 8px; border-radius: 6px; outline: none; min-width: 160px; }
+input, select { background: rgba(140,180,255,0.12); border: 1px solid rgba(140,190,255,0.28); color: #e7f0ff; padding: 6px 8px; border-radius: 6px; outline: none; min-width: 160px; }
 input::placeholder { color: rgba(255,255,255,0.55); }
+select { -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: linear-gradient(45deg, transparent 50%, #cfe6ff 50%), linear-gradient(135deg, #cfe6ff 50%, transparent 50%);
+  background-position: calc(100% - 14px) calc(50% - 3px), calc(100% - 8px) calc(50% - 3px);
+  background-size: 6px 6px, 6px 6px; background-repeat: no-repeat; padding-right: 24px; }
+
+/* Settings menu */
+.menu { position: absolute; top: 38px; right: 10px; background: rgba(12,20,40,0.92); border: 1px solid rgba(140,190,255,0.28); border-radius: 8px; padding: 8px; width: 220px; box-shadow: 0 6px 20px rgba(0,0,0,0.35); z-index: 10; overflow: visible; text-align: left; }
+.menu.hidden { display: none; }
+.menu-title { font-size: 12px; opacity: 0.75; margin-bottom: 6px; letter-spacing: 0.6px; text-transform: uppercase; }
+.menu-item { position: relative; display: block; font-size: 13px; padding: 4px 2px; padding-right: 32px; cursor: pointer; width: 100%; }
+.menu-item input { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); margin: 0; }
 
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .small { font-size: 12px; }
@@ -73,3 +84,7 @@ input::placeholder { color: rgba(255,255,255,0.55); }
 .status-degraded { background: rgba(240, 180, 50, 0.18); border-color: rgba(255, 210, 100, 0.35); }
 .status-partial { background: rgba(240, 120, 60, 0.18); border-color: rgba(255, 170, 120, 0.35); }
 .status-major { background: rgba(220, 60, 60, 0.18); border-color: rgba(255, 110, 110, 0.35); }
+
+/* Timer */
+.timer-display { font-size: 20px; font-weight: 700; margin-top: 6px; }
+.timer-controls { margin-top: 6px; }

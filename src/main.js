@@ -254,6 +254,20 @@ function registerShortcuts() {
     setClickThrough(!clickThrough);
     if (mainWindow) mainWindow.webContents.send('overlay:clickThroughChanged', { clickThrough });
   });
+
+  // Ctrl+Shift+I toggles overlay visibility
+  globalShortcut.register('Control+Shift+I', () => {
+    if (!mainWindow) return;
+    if (mainWindow.isVisible()) {
+      mainWindow.hide();
+    } else {
+      // Show without stealing focus
+      try { mainWindow.showInactive(); } catch (_) { mainWindow.show(); }
+      // Re-assert overlay behavior
+      mainWindow.setAlwaysOnTop(true, 'screen-saver');
+      setClickThrough(clickThrough);
+    }
+  });
 }
 
 app.whenReady().then(() => {

@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('overlay', {
   quit: () => ipcRenderer.invoke('overlay:quit'),
   llmQuery: (question) => ipcRenderer.invoke('overlay:llmQuery', question),
   resizeToContent: (height) => ipcRenderer.invoke('overlay:resizeToContent', height),
+  llmHealth: () => ipcRenderer.invoke('overlay:llmHealth'),
   onClickThroughChanged: (cb) => {
     const handler = (_e, payload) => cb && cb(payload);
     ipcRenderer.on('overlay:clickThroughChanged', handler);

@@ -86,6 +86,31 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  // LLM health check: verify key present and model reachable quickly
+  ipcMain.handle('overlay:llmHealth', async () => {
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) return { ok: false, reason: 'no_key' };
+    try {
+      const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent';
+      const cfg = loadConfigOnce();
+      const enableSearch = !!(cfg.enable_google_search || cfg.googleSearch || cfg.enableSearch);
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 5000);
+      const body = {
+        contents: [ { parts: [ { text: 'ping' } ] } ],
+        ...(enableSearch ? { tools: [ { google_search: {} } ] } : {})
+      };
+      const resp = await fetch(`${endpoint}?key=${encodeURIComponent(apiKey)}`, {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: controller.signal
+      });
+      clearTimeout(t);
+      if (!resp.ok) return { ok: false, reason: 'http_' + resp.status };
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, reason: 'error', details: String(e) };
+    }
+  });
 }
 
 function setClickThrough(enabled) {

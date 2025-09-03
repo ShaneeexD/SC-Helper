@@ -1,10 +1,11 @@
-const statusEl = document.getElementById('status');
+// Elements
 const lockBtn = document.getElementById('lockBtn');
 const closeBtn = document.getElementById('closeBtn');
 const llmInput = document.getElementById('llmInput');
 const llmAskBtn = document.getElementById('llmAskBtn');
 const llmAnswerEl = document.getElementById('llmAnswer');
 const gameStatusEl = document.getElementById('gameStatus');
+const llmStatusEl = document.getElementById('llmStatus');
 const overlayRoot = document.querySelector('.overlay');
 
 // Minimal, safe markdown renderer (escape first)
@@ -46,13 +47,10 @@ if (window.ResizeObserver && overlayRoot) {
 
 function renderStatus(payload) {
   if (!payload || payload.error) {
-    statusEl.textContent = `RSI status unavailable${payload?.details ? ' — ' + payload.details : ''}`;
     updateGameStatus('unknown', 'Unknown');
     return;
   }
   const txt = (payload.overallText || '').trim();
-  statusEl.textContent = txt || 'No data';
-
   // Map common phrases to pill states
   const L = txt.toLowerCase();
   let state = 'unknown';
@@ -80,7 +78,21 @@ async function refreshStatus() {
     const data = await window.overlay.getStatus();
     renderStatus(data);
   } catch (e) {
-    statusEl.textContent = 'Failed to load status';
+    // Ignore text; just set unknown pill
+    updateGameStatus('unknown', 'Unknown');
+  }
+}
+
+function updateLlmStatus(ok) {
+  if (!llmStatusEl) return;
+  const classes = ['status-unknown','status-ok','status-degraded','status-partial','status-major'];
+  llmStatusEl.classList.remove(...classes);
+  if (ok) {
+    llmStatusEl.classList.add('status-ok');
+    llmStatusEl.textContent = 'Operational';
+  } else {
+    llmStatusEl.classList.add('status-major');
+    llmStatusEl.textContent = 'Unavailable';
   }
 }
 
@@ -125,5 +137,24 @@ llmAskBtn.addEventListener('click', async () => {
 syncLockBtn();
 refreshStatus();
 setInterval(refreshStatus, 60_000);
+
+// LLM health check on load and every 5 minutes
+(async function initLlmHealth() {
+  try {
+    const res = await window.overlay.llmHealth();
+    updateLlmStatus(Boolean(res && res.ok));
+  } catch (_) {
+    updateLlmStatus(false);
+  }
+})();
+setInterval(async () => {
+  try {
+    const res = await window.overlay.llmHealth();
+    updateLlmStatus(Boolean(res && res.ok));
+  } catch (_) {
+    updateLlmStatus(false);
+  }
+}, 300_000);
+
 // Initial size
 reportSize();

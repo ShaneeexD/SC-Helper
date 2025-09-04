@@ -25,18 +25,98 @@ const TTL = {
 
 // Cache config values
 let cachedConfig = null;
+// Look for config.json relative to app directory
+function findConfigPath() {
+  console.log('[SC-Helper] Looking for config file...');
+  console.log(`[SC-Helper] isPackaged: ${app.isPackaged}`);
+  console.log(`[SC-Helper] Current directory: ${process.cwd()}`);
+  console.log(`[SC-Helper] App path: ${app.getAppPath()}`);
+  console.log(`[SC-Helper] Exe path: ${process.execPath}`);
+  
+  // Try a direct file system approach that doesn't rely on app paths
+  // Place config.json next to the exe file itself
+  if (app.isPackaged) {
+    const exeDir = path.dirname(process.execPath);
+    console.log(`[SC-Helper] Checking next to EXE: ${exeDir}`);
+    
+    try {
+      // Read the directory contents to see what's there
+      const dirContents = fs.readdirSync(exeDir);
+      console.log(`[SC-Helper] Files next to EXE:`, dirContents);
+      
+      // Look for our config files
+      for (const file of dirContents) {
+        if (file === 'config.json' || file === 'config.example.json') {
+          const fullPath = path.join(exeDir, file);
+          console.log(`[SC-Helper] Found file: ${file} at ${fullPath}`);
+          
+          try {
+            // Test if we can actually read this file
+            const testRead = fs.readFileSync(fullPath, 'utf8');
+            console.log(`[SC-Helper] Successfully read ${file}, length: ${testRead.length}`); 
+            return fullPath;
+          } catch (readErr) {
+            console.log(`[SC-Helper] Failed to read ${file}: ${readErr}`);
+          }
+        }
+      }
+    } catch (e) {
+      console.log(`[SC-Helper] Error listing EXE directory: ${e}`);
+    }
+    
+    // Try the parent of the exe directory too
+    try {
+      const parentDir = path.resolve(exeDir, '..');
+      console.log(`[SC-Helper] Checking parent of EXE dir: ${parentDir}`);
+      const parentContents = fs.readdirSync(parentDir);
+      console.log(`[SC-Helper] Files in parent dir:`, parentContents);
+      
+      for (const file of parentContents) {
+        if (file === 'config.json' || file === 'config.example.json') {
+          const fullPath = path.join(parentDir, file);
+          try {
+            const testRead = fs.readFileSync(fullPath, 'utf8');
+            console.log(`[SC-Helper] Successfully read parent dir ${file}, length: ${testRead.length}`);
+            return fullPath;
+          } catch (readErr) {
+            console.log(`[SC-Helper] Failed to read parent dir ${file}: ${readErr}`);
+          }
+        }
+      }
+    } catch (e) {
+      console.log(`[SC-Helper] Error checking parent dir: ${e}`);
+    }
+  }
+  
+  // Fall back to dev mode path if not packaged
+  if (!app.isPackaged) {
+    const devPath = path.resolve(__dirname, '..', 'config.json');
+    if (fs.existsSync(devPath)) {
+      console.log(`[SC-Helper] Found dev config at: ${devPath}`);
+      return devPath;
+    }
+    
+    const devExamplePath = path.resolve(__dirname, '..', 'config.example.json');
+    if (fs.existsSync(devExamplePath)) {
+      console.log(`[SC-Helper] Found dev example config at: ${devExamplePath}`);
+      return devExamplePath;
+    }
+  }
+  
+  console.log('[SC-Helper] No config file found after all checks');
+  return undefined;
+}
 function loadConfigOnce() {
   if (cachedConfig) return cachedConfig;
-  try {
-    // Try project root config.json (src/main.js is in src/, so ../config.json)
-    const cfgPath = path.resolve(__dirname, '..', 'config.json');
-    if (fs.existsSync(cfgPath)) {
+  const cfgPath = findConfigPath();
+  if (cfgPath) {
+    try {
       const raw = fs.readFileSync(cfgPath, 'utf-8');
       cachedConfig = JSON.parse(raw);
       return cachedConfig;
+    } catch (e) {
+      console.warn('[config] Failed to parse', cfgPath, e?.message || String(e));
     }
-  } catch (e) {
-    console.warn('Failed to read config.json:', e?.message || String(e));
   }
   cachedConfig = {};
   return cachedConfig;

@@ -65,3 +65,23 @@ The overlay uses Google's Gemini API for its AI features. You will need to provi
     -   **Theme Button (🎨):** Opens the theme selection menu.
     -   **Settings Button (⚙️):** Opens the settings menu to toggle UI panels.
     -   **Close Button (❌):** Quits the application.
+
+## Install (Windows — Unpacked Release)
+
+If you prefer to run the unpacked build (no installer, no portable wrapper):
+
+1. **Download** the latest release from the Releases page.
+2. **Extract** the archive and open the `win-unpacked/` folder (it contains `SC Overlay.exe`).
+3. **Configure your API key**:
+   - Duplicate or rename `config.example.json` to `config.json` in the same `win-unpacked/` folder.
+   - Get a Gemini API key (see the steps in the “Configuration” section above), then open `config.json` and paste your key:
+
+   ```json
+   {
+     "GEMINI_API_KEY": "YOUR_GOOGLE_AI_STUDIO_API_KEY_HERE"
+   }
+   ```
+
+4. **Run the app** by launching `SC Overlay.exe` inside `win-unpacked/`.
+
+That’s it—your overlay should start with AI features enabled.

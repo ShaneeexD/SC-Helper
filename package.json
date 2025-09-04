@@ -7,11 +7,41 @@
   "license": "MIT",
   "scripts": {
     "start": "node .\\scripts\\start-electron.js",
-    "build": "echo 'Use electron-builder or package later'"
+    "build": "electron-builder",
+    "dist": "electron-builder --win"
   },
   "devDependencies": {
     "electron": "^29.4.0",
-    "cross-env": "^7.0.3"
+    "cross-env": "^7.0.3",
+    "electron-builder": "^24.13.3"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "build": {
+    "appId": "com.yourname.scoverlay",
+    "productName": "SC Overlay",
+    "files": [
+      "src/**/*",
+      "scripts/**/*",
+      "package.json",
+      "config.example.json"
+    ],
+    "asar": true,
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": false
+    },
+    "portable": {
+      "artifactName": "SC-Overlay-Portable-${version}.exe"
+    }
+  }
 }

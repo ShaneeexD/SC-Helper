@@ -16,6 +16,7 @@
         <div class="title">Star Citizen Helper</div>
         <div class="spacer"></div>
         <button id="settingsBtn" class="btn no-drag" title="Settings">⚙️</button>
+        <button id="themeBtn" class="btn no-drag" title="Themes">🎨</button>
         <button id="lockBtn" class="btn no-drag" title="Toggle Lock (Ctrl+Shift+O)">Locked</button>
         <button id="closeBtn" class="btn no-drag" title="Close overlay">✕</button>
       </div>
@@ -75,6 +76,16 @@
         <label class="menu-item"><input type="checkbox" id="toggleTimer" checked /> Timer</label>
         <div class="menu-title mt">Settings</div>
         <label class="menu-item"><input type="checkbox" id="toggleImages" checked /> Include images in answers</label>
+      </div>
+
+      <!-- Theme menu -->
+      <div id="themeMenu" class="menu hidden no-drag" role="dialog" aria-label="Themes">
+        <div class="menu-title">Themes</div>
+        <label class="menu-item"><input type="radio" name="themeChoice" id="themeDefault" value="default" checked /> Default (Blue)</label>
+        <label class="menu-item"><input type="radio" name="themeChoice" id="themeGreen" value="green" /> Green</label>
+        <label class="menu-item"><input type="radio" name="themeChoice" id="themeAmber" value="amber" /> Amber</label>
+        <label class="menu-item"><input type="radio" name="themeChoice" id="themePurple" value="purple" /> Purple</label>
+        <label class="menu-item"><input type="radio" name="themeChoice" id="themeContrast" value="contrast" /> High Contrast</label>
       </div>
 
       <div class="hint mono tiny">Ctrl+Shift+O to toggle Lock • Drag the header to move • Ctrl+Shift+I to toggle visibility</div>

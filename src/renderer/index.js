@@ -38,6 +38,9 @@ if (llmImageEl) {
 // Settings elements
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsMenu = document.getElementById('settingsMenu');
+// Theme elements
+const themeBtn = document.getElementById('themeBtn');
+const themeMenu = document.getElementById('themeMenu');
 const gameStatusRow = document.getElementById('gameStatusRow');
 const llmStatusPanel = document.getElementById('llmStatusPanel');
 const aiPanel = document.getElementById('aiPanel');
@@ -512,6 +515,38 @@ function setImagesEnabled(on) {
   try { localStorage.setItem(IMAGES_STORE_KEY, on ? 'true' : 'false'); } catch {}
 }
 
+// ------- Themes -------
+const THEME_STORE_KEY = 'sc_helper_theme_v1';
+const THEME_CLASS_PREFIX = 'theme-';
+const THEME_OPTIONS = ['default','green','amber','purple','contrast'];
+function getSavedTheme() {
+  try { return localStorage.getItem(THEME_STORE_KEY) || 'default'; } catch { return 'default'; }
+}
+function saveTheme(name) {
+  try { localStorage.setItem(THEME_STORE_KEY, name); } catch {}
+}
+function applyTheme(name) {
+  if (!overlayRoot) return;
+  // Remove any existing theme- classes
+  overlayRoot.classList.forEach(c => { if (c.startsWith(THEME_CLASS_PREFIX)) overlayRoot.classList.remove(c); });
+  if (name && name !== 'default') overlayRoot.classList.add(`${THEME_CLASS_PREFIX}${name}`);
+}
+// Sync radios from saved theme
+function syncThemeRadios(name) {
+  const map = {
+    default: document.getElementById('themeDefault'),
+    green: document.getElementById('themeGreen'),
+    amber: document.getElementById('themeAmber'),
+    purple: document.getElementById('themePurple'),
+    contrast: document.getElementById('themeContrast')
+  };
+  Object.entries(map).forEach(([k, el]) => { if (el) el.checked = (k === name); });
+}
+// Initialize theme on load
+const initialTheme = getSavedTheme();
+applyTheme(initialTheme);
+syncThemeRadios(initialTheme);
+
 // ------- Settings: panel visibility -------
 const PANEL_STORE_KEY = 'sc_helper_panel_toggles_v1';
 function getPanelToggles() {
@@ -554,9 +589,50 @@ function openMenu() { settingsMenu?.classList.remove('hidden'); }
 function closeMenu() { settingsMenu?.classList.add('hidden'); }
 function toggleMenu() { if (!settingsMenu) return; settingsMenu.classList.toggle('hidden'); }
 
-if (settingsBtn) settingsBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); });
+// Theme menu open/close
+function openThemeMenu() { themeMenu?.classList.remove('hidden'); }
+function closeThemeMenu() { themeMenu?.classList.add('hidden'); }
+function toggleThemeMenu() { if (!themeMenu) return; themeMenu.classList.toggle('hidden'); }
+
+if (settingsBtn) settingsBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  // ensure theme menu closes when opening settings
+  closeThemeMenu();
+  toggleMenu();
+});
 if (settingsMenu) settingsMenu.addEventListener('click', (e) => e.stopPropagation());
-// Click outside closes
-document.addEventListener('click', () => closeMenu());
-// ESC closes
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+
+if (themeBtn) themeBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  // ensure settings menu closes when opening theme menu
+  closeMenu();
+  toggleThemeMenu();
+});
+if (themeMenu) themeMenu.addEventListener('click', (e) => e.stopPropagation());
+
+// Click outside closes both menus
+document.addEventListener('click', () => { closeMenu(); closeThemeMenu(); });
+// ESC closes both menus
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeMenu(); closeThemeMenu(); } });
+
+// Theme radio handlers
+function bindThemeRadios() {
+  const map = {
+    default: document.getElementById('themeDefault'),
+    green: document.getElementById('themeGreen'),
+    amber: document.getElementById('themeAmber'),
+    purple: document.getElementById('themePurple'),
+    contrast: document.getElementById('themeContrast')
+  };
+  Object.entries(map).forEach(([name, el]) => {
+    if (el) el.addEventListener('change', () => {
+      if (!el.checked) return;
+      applyTheme(name);
+      saveTheme(name);
+      // keep radios in sync and close menu for immediate feedback
+      syncThemeRadios(name);
+      reportSize();
+    });
+  });
+}
+bindThemeRadios();

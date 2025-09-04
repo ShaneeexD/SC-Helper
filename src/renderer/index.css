@@ -1,15 +1,106 @@
 html, body { height: 100%; margin: 0; overflow: hidden; }
-body { background: transparent; font-family: 'Rajdhani', system-ui, Segoe UI, Roboto, Arial, sans-serif; color: #e7f0ff; letter-spacing: 0.2px; }
+body { background: transparent; font-family: 'Rajdhani', system-ui, Segoe UI, Roboto, Arial, sans-serif; color: var(--text-color, #e7f0ff); letter-spacing: 0.2px; }
 
-.overlay { 
+/* Theme variables (default) and themes */
+.overlay {
+  /* defaults (blue) */
+  --text-color: #e7f0ff;
+  --accent-bg: rgba(90,150,255,0.14);
+  --accent-border: rgba(140,190,255,0.28);
+  --accent-shadow-inset: rgba(100,170,255,0.25);
+  --accent-shadow-outer: rgba(60,140,255,0.18);
+  --btn-bg: rgba(100,160,255,0.22);
+  --btn-bg-hover: rgba(120,180,255,0.3);
+  --btn-border: rgba(130,180,255,0.35);
+  --input-bg: rgba(140,180,255,0.12);
+  --input-border: rgba(140,190,255,0.28);
+  --menu-bg: rgba(12,20,40,0.92);
+  --menu-border: rgba(140,190,255,0.28);
+  --link: #9fd2ff;
+  --link-hover: #c6e6ff;
+  --image-border: rgba(140,190,255,0.28);
+
   position: relative;
-  background: rgba(90, 150, 255, 0.14);
-  border: 1px solid rgba(140, 190, 255, 0.28);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
   border-radius: 8px;
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   padding: 10px 10px 16px; /* extra bottom padding to avoid cut off when panels hidden */
-  box-shadow: 0 0 20px rgba(100, 170, 255, 0.25) inset, 0 0 12px rgba(60, 140, 255, 0.18);
+  box-shadow: 0 0 20px var(--accent-shadow-inset) inset, 0 0 12px var(--accent-shadow-outer);
+}
+
+/* Green theme */
+.overlay.theme-green {
+  --accent-bg: rgba(60, 200, 120, 0.14);
+  --accent-border: rgba(100, 240, 170, 0.28);
+  --accent-shadow-inset: rgba(80, 220, 150, 0.25);
+  --accent-shadow-outer: rgba(60, 200, 140, 0.18);
+  --btn-bg: rgba(80, 220, 150, 0.22);
+  --btn-bg-hover: rgba(100, 240, 170, 0.3);
+  --btn-border: rgba(120, 255, 190, 0.35);
+  --input-bg: rgba(80, 220, 150, 0.12);
+  --input-border: rgba(100, 240, 170, 0.28);
+  --menu-bg: rgba(12, 32, 24, 0.92);
+  --menu-border: rgba(100, 240, 170, 0.28);
+  --link: #9ff3c8;
+  --link-hover: #cbffe6;
+  --image-border: rgba(100, 240, 170, 0.28);
+}
+
+/* Amber theme */
+.overlay.theme-amber {
+  --accent-bg: rgba(240, 180, 50, 0.14);
+  --accent-border: rgba(255, 210, 100, 0.28);
+  --accent-shadow-inset: rgba(240, 180, 50, 0.25);
+  --accent-shadow-outer: rgba(240, 170, 60, 0.18);
+  --btn-bg: rgba(240, 190, 80, 0.22);
+  --btn-bg-hover: rgba(255, 210, 100, 0.3);
+  --btn-border: rgba(255, 220, 130, 0.35);
+  --input-bg: rgba(240, 180, 80, 0.12);
+  --input-border: rgba(255, 210, 100, 0.28);
+  --menu-bg: rgba(36, 28, 8, 0.92);
+  --menu-border: rgba(255, 210, 100, 0.28);
+  --link: #ffd27a;
+  --link-hover: #ffe7b0;
+  --image-border: rgba(255, 210, 100, 0.28);
+}
+
+/* Purple theme */
+.overlay.theme-purple {
+  --accent-bg: rgba(170, 110, 250, 0.14);
+  --accent-border: rgba(200, 140, 255, 0.28);
+  --accent-shadow-inset: rgba(180, 120, 255, 0.25);
+  --accent-shadow-outer: rgba(150, 100, 240, 0.18);
+  --btn-bg: rgba(180, 120, 255, 0.22);
+  --btn-bg-hover: rgba(200, 140, 255, 0.3);
+  --btn-border: rgba(210, 160, 255, 0.35);
+  --input-bg: rgba(180, 140, 255, 0.12);
+  --input-border: rgba(200, 160, 255, 0.28);
+  --menu-bg: rgba(24, 12, 40, 0.92);
+  --menu-border: rgba(200, 140, 255, 0.28);
+  --link: #dab6ff;
+  --link-hover: #efe0ff;
+  --image-border: rgba(200, 140, 255, 0.28);
+}
+
+/* High contrast theme */
+.overlay.theme-contrast {
+  --text-color: #ffffff;
+  --accent-bg: rgba(0, 0, 0, 0.6);
+  --accent-border: rgba(255, 255, 255, 0.55);
+  --accent-shadow-inset: rgba(255, 255, 255, 0.2);
+  --accent-shadow-outer: rgba(255, 255, 255, 0.15);
+  --btn-bg: rgba(255,255,255,0.12);
+  --btn-bg-hover: rgba(255,255,255,0.2);
+  --btn-border: rgba(255,255,255,0.45);
+  --input-bg: rgba(255,255,255,0.08);
+  --input-border: rgba(255,255,255,0.35);
+  --menu-bg: rgba(0,0,0,0.92);
+  --menu-border: rgba(255,255,255,0.45);
+  --link: #ffd27a;
+  --link-hover: #fff2c7;
+  --image-border: rgba(255,255,255,0.35);
 }
 
 /* LLM answer formatting */
@@ -26,10 +117,10 @@ body { background: transparent; font-family: 'Rajdhani', system-ui, Segoe UI, Ro
   font-size: 0.95em;
 }
 #llmAnswer a {
-  color: #9fd2ff;
+  color: var(--link);
   text-decoration: underline;
 }
-#llmAnswer a:hover { color: #c6e6ff; }
+#llmAnswer a:hover { color: var(--link-hover); }
 
 .titlebar { 
   display: flex; align-items: center; gap: 8px; 
@@ -46,18 +137,18 @@ body { background: transparent; font-family: 'Rajdhani', system-ui, Segoe UI, Ro
 .panel { min-width: 240px; }
 .panel-title { font-size: 12px; opacity: 0.75; margin: 6px 0; letter-spacing: 0.6px; text-transform: uppercase; }
 
-.btn { background: rgba(100,160,255,0.22); color: #e7f0ff; border: 1px solid rgba(130,180,255,0.35); padding: 6px 10px; border-radius: 6px; cursor: pointer; }
-.btn:hover { background: rgba(120,180,255,0.3); }
+.btn { background: var(--btn-bg); color: var(--text-color); border: 1px solid var(--btn-border); padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+.btn:hover { background: var(--btn-bg-hover); }
 .btn:active { transform: translateY(1px); }
 
-input, select { background: rgba(140,180,255,0.12); border: 1px solid rgba(140,190,255,0.28); color: #e7f0ff; padding: 6px 8px; border-radius: 6px; outline: none; min-width: 160px; }
+input, select { background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-color); padding: 6px 8px; border-radius: 6px; outline: none; min-width: 160px; }
 input::placeholder { color: rgba(255,255,255,0.55); }
 select { -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: linear-gradient(45deg, transparent 50%, #cfe6ff 50%), linear-gradient(135deg, #cfe6ff 50%, transparent 50%);
   background-position: calc(100% - 14px) calc(50% - 3px), calc(100% - 8px) calc(50% - 3px);
   background-size: 6px 6px, 6px 6px; background-repeat: no-repeat; padding-right: 24px; }
 
-/* Settings menu */
-.menu { position: absolute; top: 38px; right: 10px; background: rgba(12,20,40,0.92); border: 1px solid rgba(140,190,255,0.28); border-radius: 8px; padding: 8px; width: 220px; box-shadow: 0 6px 20px rgba(0,0,0,0.35); z-index: 10; overflow: visible; text-align: left; }
+/* Settings and Theme menus */
+.menu { position: absolute; top: 38px; right: 10px; background: var(--menu-bg); border: 1px solid var(--menu-border); border-radius: 8px; padding: 8px; width: 220px; box-shadow: 0 6px 20px rgba(0,0,0,0.35); z-index: 10; overflow: visible; text-align: left; }
 .menu.hidden { display: none; }
 .menu-title { font-size: 12px; opacity: 0.75; margin-bottom: 6px; letter-spacing: 0.6px; text-transform: uppercase; }
 .menu-title.mt { margin-top: 8px; }
@@ -76,7 +167,7 @@ select { -webkit-appearance: none; -moz-appearance: none; appearance: none; back
 
 .answer { margin-top: 6px; opacity: 0.9; }
 /* Optional image shown under LLM answer */
-.answer-image { margin-top: 6px; max-width: 100%; max-height: 220px; height: auto; object-fit: contain; border-radius: 6px; border: 1px solid rgba(140,190,255,0.28); display: block; }
+.answer-image { margin-top: 6px; max-width: 100%; max-height: 220px; height: auto; object-fit: contain; border-radius: 6px; border: 1px solid var(--image-border); display: block; }
 /* Utility */
 .hidden { display: none !important; }
 

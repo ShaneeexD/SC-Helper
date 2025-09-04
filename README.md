@@ -74,7 +74,7 @@ The overlay uses Google's Gemini API for its AI features. You will need to provi
 
 ## Install (Windows — Unpacked Release)
 
-If you prefer to run the unpacked build (no installer, no portable wrapper):
+If you prefer to run the unpacked build:
 
 1. **Download** the latest release from the Releases page.
 2. **Extract** the archive and open the `win-unpacked/` folder (it contains `SC Overlay.exe`).

@@ -56,13 +56,55 @@ function getGeminiApiKey() {
   );
 }
 
+// --- Window state persistence ---
+const stateFile = path.join(app.getPath('userData'), 'window-state.json');
+function readJSONSafe(file) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf-8')); } catch { return null; }
+}
+function rectsIntersect(a, b) {
+  const xOverlap = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.min(a.x + a.width, b.x + b.width, Math.max(a.x, b.x)));
+  const yOverlap = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.min(a.y + a.height, b.y + b.height, Math.max(a.y, b.y)));
+  return xOverlap > 0 && yOverlap > 0;
+}
+function isVisibleOnAnyDisplay(bounds) {
+  try {
+    const displays = screen.getAllDisplays();
+    return displays.some(d => rectsIntersect(bounds, d.workArea));
+  } catch {
+    return true; // if screen API fails, don't block restore
+  }
+}
+function loadWindowState() {
+  const fallback = { width: 580, height: 220 };
+  const s = readJSONSafe(stateFile);
+  if (!s || typeof s !== 'object') return fallback;
+  const w = Math.max(200, Math.floor(Number(s.width) || fallback.width));
+  const h = Math.max(150, Math.floor(Number(s.height) || fallback.height));
+  const state = { width: w, height: h };
+  if (Number.isFinite(s.x) && Number.isFinite(s.y)) {
+    const b = { x: Math.floor(s.x), y: Math.floor(s.y), width: w, height: h };
+    if (isVisibleOnAnyDisplay(b)) Object.assign(state, { x: b.x, y: b.y });
+  }
+  return state;
+}
+function saveWindowState(win) {
+  if (!win) return;
+  try {
+    const b = win.getBounds();
+    fs.mkdirSync(path.dirname(stateFile), { recursive: true });
+    fs.writeFileSync(stateFile, JSON.stringify({ x: b.x, y: b.y, width: b.width, height: b.height }));
+  } catch {}
+}
+
 function createWindow() {
   // Remove default menu
   Menu.setApplicationMenu(null);
 
+  const restored = loadWindowState();
   mainWindow = new BrowserWindow({
-    width: 580,
-    height: 220,
+    width: restored.width,
+    height: restored.height,
+    ...(Number.isFinite(restored.x) && Number.isFinite(restored.y) ? { x: restored.x, y: restored.y } : {}),
     frame: false,
     transparent: true,
     hasShadow: false,
@@ -205,6 +247,16 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  // Save window bounds on move/resize/close (debounced)
+  let saveTimer;
+  const scheduleSave = () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => saveWindowState(mainWindow), 300);
+  };
+  mainWindow.on('move', scheduleSave);
+  mainWindow.on('resize', scheduleSave);
+  mainWindow.on('close', () => saveWindowState(mainWindow));
 
   // LLM health check: verify key present and model reachable quickly
   ipcMain.handle('overlay:llmHealth', async () => {

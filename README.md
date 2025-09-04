@@ -18,8 +18,8 @@ To run this overlay on your local machine, follow these steps:
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/sc-overlay.git
-    cd sc-overlay
+    git clone https://github.com/your-username/sc-helper.git
+    cd sc-helper
     ```
 
 2.  **Install dependencies:**

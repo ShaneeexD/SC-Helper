@@ -1,13 +1,40 @@
 // Elements
+const UI_DEBUG = false; // set true to show per-query debug details in the overlay
 const lockBtn = document.getElementById('lockBtn');
 const closeBtn = document.getElementById('closeBtn');
 const llmInput = document.getElementById('llmInput');
 const llmAskBtn = document.getElementById('llmAskBtn');
 const llmClearBtn = document.getElementById('llmClearBtn');
 const llmAnswerEl = document.getElementById('llmAnswer');
+const llmImageEl = document.getElementById('llmImage');
 const gameStatusEl = document.getElementById('gameStatus');
 const llmStatusEl = document.getElementById('llmStatus');
 const overlayRoot = document.querySelector('.overlay');
+// Debug helpers
+function dbgSet(msg) {
+  if (!UI_DEBUG) return;
+  const el = document.getElementById('llmDebug');
+  if (!el) return;
+  el.classList.remove('hidden');
+  el.textContent = String(msg || '');
+}
+function dbgAppend(msg) {
+  if (!UI_DEBUG) return;
+  const el = document.getElementById('llmDebug');
+  if (!el) return;
+  el.classList.remove('hidden');
+  el.textContent = (el.textContent ? el.textContent + ' • ' : '') + String(msg || '');
+}
+// Resize when image loads and hide on error
+if (llmImageEl) {
+  llmImageEl.addEventListener('load', () => {
+    reportSize();
+  });
+  llmImageEl.addEventListener('error', () => {
+    llmImageEl.classList.add('hidden');
+    reportSize();
+  });
+}
 // Settings elements
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsMenu = document.getElementById('settingsMenu');
@@ -19,6 +46,7 @@ const toggleGame = document.getElementById('toggleGame');
 const toggleLLM = document.getElementById('toggleLLM');
 const toggleAI = document.getElementById('toggleAI');
 const toggleTimer = document.getElementById('toggleTimer');
+const toggleImages = document.getElementById('toggleImages');
 
 // Timer elements
 const timerModeSel = document.getElementById('timerMode');
@@ -289,12 +317,139 @@ llmAskBtn.addEventListener('click', async () => {
   // Clear input after capturing the question
   llmInput.value = '';
   llmAnswerEl.textContent = 'Analyzing…';
+  if (llmImageEl) { llmImageEl.src = ''; llmImageEl.classList.add('hidden'); }
   const res = await window.overlay.llmQuery(q);
   if (!res || res.error) {
     llmAnswerEl.textContent = res?.message || 'LLM error';
     return;
   }
-  llmAnswerEl.innerHTML = mdToSafeHtml(res.text || 'No answer.');
+  const raw = String(res.text || 'No answer.');
+  console.log('[renderer] Raw LLM text:', raw);
+  // Ignore any IMAGE line; we will only use Star Citizen Wiki via overlay.findWikiImage()
+  const m = raw.match(/^\s*IMAGE:\s*(https?:[^\s]+)\s*$/im);
+  let imgUrl = '';
+  // Prefer keeping Star Citizen Wiki thumbnail URLs (in case we later allow direct URLs); only switch to canonical if load fails
+  const dbg = document.getElementById('llmDebug');
+  if (!UI_DEBUG && dbg) dbg.classList.add('hidden');
+  const deriveCanonicalFromThumb = (url) => {
+    try {
+      const u = new URL(url);
+      if (/^media\.starcitizen\.tools$/i.test(u.host) && u.pathname.startsWith('/thumb/')) {
+        const parts = u.pathname.split('/');
+        if (parts.length >= 6) {
+          const h1 = parts[2];
+          const h2 = parts[3];
+          const originalFile = parts[4];
+          return `${u.protocol}//${u.host}/${h1}/${h2}/${originalFile}`;
+        }
+      }
+    } catch {}
+    return '';
+  };
+  const textOnly = raw.replace(/^\s*IMAGE:.*$/im, '').trim();
+  llmAnswerEl.innerHTML = mdToSafeHtml(textOnly || 'No answer.');
+  // Skip images entirely if disabled in settings
+  if (getImagesEnabled() === false) {
+    if (llmImageEl) { llmImageEl.src = ''; llmImageEl.classList.add('hidden'); }
+    reportSize();
+    return;
+  }
+  // Helper to load image; if it fails or no URL, try wiki image lookup
+  const loadWithFallback = async (urlMaybe) => {
+    const dbgEl = document.getElementById('llmDebug');
+    let wikiFallbackTried = false;
+    const attachErrorFallback = () => {
+      if (!llmImageEl) return;
+      // Remove any previous listeners to avoid stacking
+      llmImageEl.onerror = null;
+      llmImageEl.onload = null;
+      llmImageEl.onload = () => {
+        // Loaded successfully; no further action
+        llmImageEl.onerror = null;
+        llmImageEl.onload = null;
+      };
+      llmImageEl.onerror = async () => {
+        if (wikiFallbackTried) return;
+        wikiFallbackTried = true;
+        try {
+          const topic = q;
+          const ans = await window.overlay.findWikiImage(topic);
+          if (ans && ans.ok && ans.url) {
+            if (dbgEl) dbgAppend(`img onerror → wiki fallback ${ans.url}`);
+            // Try fetching and swapping to fallback image
+            try {
+              const r = await window.overlay.fetchImage(ans.url);
+              if (r && r.ok && r.dataUrl) {
+                llmImageEl.src = r.dataUrl;
+                llmImageEl.classList.remove('hidden');
+                return;
+              }
+            } catch {}
+            // Final attempt: set direct URL
+            llmImageEl.src = ans.url;
+            llmImageEl.classList.remove('hidden');
+          } else if (dbgEl) { dbgAppend('img onerror → wiki fallback not found'); }
+        } catch (e) {
+          if (dbgEl) dbgAppend(`img onerror → wiki lookup error: ${String(e)}`);
+        }
+      };
+    };
+    const tryUrl = async (u) => {
+      try {
+        const r = await window.overlay.fetchImage(u);
+        if (r && r.ok && r.dataUrl) {
+          llmImageEl.src = r.dataUrl;
+          llmImageEl.classList.remove('hidden');
+          console.log('[renderer] Image fetched via IPC', { bytes: r.bytes, type: r.contentType });
+          if (dbgEl) dbgSet(`IMAGE: ${u} • fetched ${r.bytes} bytes (${r.contentType})`);
+          return true;
+        }
+        // Fallback to direct URL load
+        llmImageEl.src = u;
+        llmImageEl.classList.remove('hidden');
+        if (dbgEl) dbgSet(`IMAGE: ${u} • IPC fetch failed (${r?.error || 'unknown'}), using direct URL`);
+        attachErrorFallback();
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    // 1) If we have a URL, try it
+    if (urlMaybe) {
+      const ok = await tryUrl(urlMaybe);
+      if (!ok) {
+        // If it's a wiki thumb, try the canonical original next
+        const canon = deriveCanonicalFromThumb(urlMaybe);
+        if (canon) {
+          if (dbgEl) dbgAppend(`Trying canonical original → ${canon}`);
+          const ok2 = await tryUrl(canon);
+          if (ok2) return;
+        }
+      } else {
+        return;
+      }
+    }
+    // 2) Query wiki image by topic (user question)
+    const topic = q;
+    try {
+      const ans = await window.overlay.findWikiImage(topic);
+      if (ans && ans.ok && ans.url) {
+        if (dbgEl) dbgSet(`Fallback wiki image for "${topic}": ${ans.url}`);
+        await tryUrl(ans.url);
+      } else if (dbgEl) { dbgSet(`No image or wiki fallback found (${ans?.error || 'unknown'})`); }
+    } catch (e) {
+      if (dbgEl) dbgSet(`Wiki image lookup error: ${String(e)}`);
+    }
+  };
+
+  if (llmImageEl) {
+    await loadWithFallback(imgUrl); // always triggers wiki lookup path
+  }
+  if (dbg && UI_DEBUG) {
+    // Explicitly state we ignore external IMAGE lines and rely on wiki lookup
+    if (m) dbgAppend('Ignored external IMAGE line; using wiki image only');
+    else dbgAppend('Using wiki image only');
+  }
   // Ensure window resizes to fit the new answer text
   reportSize();
 });
@@ -312,6 +467,7 @@ if (llmClearBtn) {
   llmClearBtn.addEventListener('click', () => {
     llmInput.value = '';
     llmAnswerEl.textContent = '';
+    if (llmImageEl) { llmImageEl.src = ''; llmImageEl.classList.add('hidden'); }
     reportSize();
     llmInput.focus();
   });
@@ -343,6 +499,19 @@ setInterval(async () => {
 // Initial size
 reportSize();
 
+// ------- Settings: include images -------
+const IMAGES_STORE_KEY = 'sc_helper_setting_images_v1';
+function getImagesEnabled() {
+  try {
+    const v = localStorage.getItem(IMAGES_STORE_KEY);
+    if (v === null || v === undefined) return true; // default on
+    return v === 'true';
+  } catch { return true; }
+}
+function setImagesEnabled(on) {
+  try { localStorage.setItem(IMAGES_STORE_KEY, on ? 'true' : 'false'); } catch {}
+}
+
 // ------- Settings: panel visibility -------
 const PANEL_STORE_KEY = 'sc_helper_panel_toggles_v1';
 function getPanelToggles() {
@@ -361,6 +530,7 @@ function applyPanelToggles(t) {
   if (toggleLLM) toggleLLM.checked = t.llm !== false;
   if (toggleAI) toggleAI.checked = t.ai !== false;
   if (toggleTimer) toggleTimer.checked = t.timer !== false;
+  if (toggleImages) toggleImages.checked = getImagesEnabled();
   reportSize();
 }
 const initialToggles = getPanelToggles();
@@ -377,6 +547,7 @@ if (toggleGame) toggleGame.addEventListener('change', () => updateToggle('game',
 if (toggleLLM) toggleLLM.addEventListener('change', () => updateToggle('llm', toggleLLM.checked));
 if (toggleAI) toggleAI.addEventListener('change', () => updateToggle('ai', toggleAI.checked));
 if (toggleTimer) toggleTimer.addEventListener('change', () => updateToggle('timer', toggleTimer.checked));
+if (toggleImages) toggleImages.addEventListener('change', () => setImagesEnabled(toggleImages.checked));
 
 // Settings menu open/close
 function openMenu() { settingsMenu?.classList.remove('hidden'); }

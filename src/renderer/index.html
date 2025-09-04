@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self'; connect-src https://status.robertsspaceindustries.com https://generativelanguage.googleapis.com;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self'; connect-src https://status.robertsspaceindustries.com https://generativelanguage.googleapis.com;" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SC Overlay</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,6 +43,8 @@
             <button class="btn no-drag" id="llmClearBtn" title="Clear input and answer">Clear</button>
           </div>
           <div id="llmAnswer" class="mono small answer"></div>
+          <img id="llmImage" class="answer-image hidden" alt="Related image" referrerpolicy="no-referrer" loading="lazy"/>
+          <div id="llmDebug" class="tiny mono hint"></div>
         </div>
       </div>
 
@@ -71,6 +73,8 @@
         <label class="menu-item"><input type="checkbox" id="toggleLLM" checked /> LLM Status</label>
         <label class="menu-item"><input type="checkbox" id="toggleAI" checked /> AI Query</label>
         <label class="menu-item"><input type="checkbox" id="toggleTimer" checked /> Timer</label>
+        <div class="menu-title mt">Settings</div>
+        <label class="menu-item"><input type="checkbox" id="toggleImages" checked /> Include images in answers</label>
       </div>
 
       <div class="hint mono tiny">Ctrl+Shift+O to toggle Lock • Drag the header to move • Ctrl+Shift+I to toggle visibility</div>

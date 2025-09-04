@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('overlay', {
   getClickThrough: () => ipcRenderer.invoke('overlay:getClickThrough'),
   quit: () => ipcRenderer.invoke('overlay:quit'),
   llmQuery: (question) => ipcRenderer.invoke('overlay:llmQuery', question),
+  findWikiImage: (topic) => ipcRenderer.invoke('overlay:findWikiImage', topic),
+  fetchImage: (url) => ipcRenderer.invoke('overlay:fetchImage', url),
   resizeToContent: (height) => ipcRenderer.invoke('overlay:resizeToContent', height),
   llmHealth: () => ipcRenderer.invoke('overlay:llmHealth'),
   onClickThroughChanged: (cb) => {

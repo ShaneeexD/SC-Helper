@@ -60,6 +60,7 @@ select { -webkit-appearance: none; -moz-appearance: none; appearance: none; back
 .menu { position: absolute; top: 38px; right: 10px; background: rgba(12,20,40,0.92); border: 1px solid rgba(140,190,255,0.28); border-radius: 8px; padding: 8px; width: 220px; box-shadow: 0 6px 20px rgba(0,0,0,0.35); z-index: 10; overflow: visible; text-align: left; }
 .menu.hidden { display: none; }
 .menu-title { font-size: 12px; opacity: 0.75; margin-bottom: 6px; letter-spacing: 0.6px; text-transform: uppercase; }
+.menu-title.mt { margin-top: 8px; }
 .menu-item { position: relative; display: block; font-size: 13px; padding: 4px 2px; padding-right: 32px; cursor: pointer; width: 100%; }
 .menu-item input { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); margin: 0; }
 
@@ -74,6 +75,10 @@ select { -webkit-appearance: none; -moz-appearance: none; appearance: none; back
 .hint { margin-top: 8px; }
 
 .answer { margin-top: 6px; opacity: 0.9; }
+/* Optional image shown under LLM answer */
+.answer-image { margin-top: 6px; max-width: 100%; max-height: 220px; height: auto; object-fit: contain; border-radius: 6px; border: 1px solid rgba(140,190,255,0.28); display: block; }
+/* Utility */
+.hidden { display: none !important; }
 
 /* Game Status header */
 .status-header { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; }

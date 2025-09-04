@@ -77,6 +77,125 @@ function createWindow() {
     },
   });
 
+  // Find an image URL on Star Citizen Wiki via MediaWiki API
+  // Strategy: resolve article (ns=0) -> get lead image (pageimages original or thumb)
+  // Fallback: previous File: search (ns=6)
+  ipcMain.handle('overlay:findWikiImage', async (_evt, topic) => {
+    try {
+      const q = String(topic || '').trim();
+      if (!q) return { ok: false, error: 'Empty topic' };
+
+      const apiBase = 'https://starcitizen.tools/api.php';
+      const mediaHost = 'media.starcitizen.tools';
+
+      const withinMediaHost = (u) => {
+        try { const h = new URL(u).host.toLowerCase(); return h === mediaHost; } catch { return false; }
+      };
+
+      // 1) Resolve the top article result for this query (namespace 0)
+      const searchU = new URL(apiBase);
+      searchU.searchParams.set('action', 'query');
+      searchU.searchParams.set('format', 'json');
+      searchU.searchParams.set('list', 'search');
+      searchU.searchParams.set('srsearch', q);
+      searchU.searchParams.set('srnamespace', '0');
+      searchU.searchParams.set('srlimit', '1');
+      const sResp = await fetch(searchU.toString());
+      if (sResp.ok) {
+        const sJson = await sResp.json();
+        const title = sJson?.query?.search?.[0]?.title;
+        if (title) {
+          // 2) Try to get the original lead image via pageimages
+          const piU = new URL(apiBase);
+          piU.searchParams.set('action', 'query');
+          piU.searchParams.set('format', 'json');
+          piU.searchParams.set('prop', 'pageimages');
+          piU.searchParams.set('titles', title);
+          piU.searchParams.set('piprop', 'original');
+          let piResp = await fetch(piU.toString());
+          if (piResp.ok) {
+            const piJson = await piResp.json();
+            const pages = piJson?.query?.pages || {};
+            const first = Object.values(pages)[0];
+            const original = first?.original?.source;
+            if (original && withinMediaHost(original)) {
+              console.log('[overlay:findWikiImage] topic=', q, 'title=', title, 'url=', original);
+              return { ok: true, url: original };
+            }
+          }
+          // 3) If original not available, request a large thumbnail
+          const pitU = new URL(apiBase);
+          pitU.searchParams.set('action', 'query');
+          pitU.searchParams.set('format', 'json');
+          pitU.searchParams.set('prop', 'pageimages');
+          pitU.searchParams.set('titles', title);
+          pitU.searchParams.set('pithumbsize', '1600');
+          piResp = await fetch(pitU.toString());
+          if (piResp.ok) {
+            const piJson = await piResp.json();
+            const pages = piJson?.query?.pages || {};
+            const first = Object.values(pages)[0];
+            const thumb = first?.thumbnail?.source;
+            if (thumb && withinMediaHost(thumb)) {
+              console.log('[overlay:findWikiImage] topic=', q, 'title=', title, 'url=', thumb);
+              return { ok: true, url: thumb };
+            }
+          }
+        }
+      }
+
+      // 4) Fallback: search File: namespace and pick the first valid image URL
+      const api = new URL(apiBase);
+      api.searchParams.set('action', 'query');
+      api.searchParams.set('format', 'json');
+      api.searchParams.set('prop', 'imageinfo');
+      api.searchParams.set('iiprop', 'url');
+      api.searchParams.set('generator', 'search');
+      api.searchParams.set('gsrsearch', q);
+      api.searchParams.set('gsrnamespace', '6'); // File:
+      api.searchParams.set('gsrlimit', '5');
+      const resp = await fetch(api.toString());
+      if (!resp.ok) return { ok: false, error: `HTTP ${resp.status}` };
+      const data = await resp.json();
+      const pages = data?.query?.pages || {};
+      const urls = Object.values(pages)
+        .map(p => (p.imageinfo && p.imageinfo[0] && p.imageinfo[0].url) || '')
+        .filter(Boolean)
+        .filter(u => /\.(jpg|jpeg|png|webp)(\?|$)/i.test(u))
+        .filter(withinMediaHost);
+      const pick = urls[0];
+      if (!pick) return { ok: false, error: 'No image found' };
+      console.log('[overlay:findWikiImage] topic=', q, 'url=', pick);
+      return { ok: true, url: pick };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  });
+
+  // Fetch remote image and return as data URL to avoid hotlink/CSP issues
+  ipcMain.handle('overlay:fetchImage', async (_evt, url) => {
+    try {
+      if (!/^https?:\/\//i.test(String(url || ''))) return { ok: false, error: 'Invalid URL' };
+      const resp = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept': 'image/avif,image/webp,image/*,*/*;q=0.8',
+          'Referer': 'https://starcitizen.tools/'
+        }
+      });
+      if (!resp.ok) return { ok: false, error: `HTTP ${resp.status}` };
+      const contentType = resp.headers.get('content-type') || 'image/png';
+      const buf = Buffer.from(await resp.arrayBuffer());
+      const b64 = buf.toString('base64');
+      const dataUrl = `data:${contentType};base64,${b64}`;
+      console.log('[overlay:fetchImage] fetched', url, 'type:', contentType, 'bytes:', buf.length);
+      return { ok: true, dataUrl, contentType, bytes: buf.length };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  });
+
   // Make it a real overlay
   mainWindow.setAlwaysOnTop(true, 'screen-saver');
   setClickThrough(clickThrough);
@@ -207,6 +326,7 @@ function registerIpcHandlers() {
         'CONCISENESS: Keep answers short and to-the-point.',
         'SCOPE: Only answer Star Citizen questions. If out-of-scope, say so.',
         'LOOKUP: If Google Search retrieval tools are available, use them when the question involves time-sensitive, numeric, or verifiable facts (e.g., ship prices, locations, spawn availability, patch/PTS details, stats, schedules) or when uncertain. Prefer grounded answers with citations when possible.',
+        'IMAGES: If an illustrative image would help, find ONE high-quality, direct image URL from Google Search results (must end in .jpg, .jpeg, .png, or .webp) and include it on its own line at the end in the format: IMAGE: <URL>. Do not output this line if you cannot find a suitable image URL. Never use an example URL; find a new one based on the current search.',
         'EVIDENCE: Avoid fabricating specifics; state uncertainty if needed.'
       ].join(' ');
       const cfg = loadConfigOnce();
@@ -225,9 +345,10 @@ function registerIpcHandlers() {
       if (!resp.ok) {
         return { error: true, message: `LLM HTTP ${resp.status}` };
       }
-      const json = await resp.json();
-      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      return { text };
+      const data = await resp.json();
+      const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('\n') || '';
+      console.log('[overlay:llmQuery] Raw response text:', text);
+      return { error: false, text };
     } catch (e) {
       return { error: true, message: 'LLM request failed', details: String(e) };
     }

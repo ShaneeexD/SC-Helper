@@ -12,6 +12,12 @@ A simple, transparent Electron-based overlay for Star Citizen. It provides quick
 - **Click-Through Lock**: Lock the overlay to pass all mouse clicks through to the game.
 - **Configurable UI**: Toggle different panels (Game Status, AI, etc.) to customize what you see.
 
+![alt text](image.png)
+
+![alt text](image-1.png)
+
+![alt text](image-2.png)
+
 ## Installation
 
 To run this overlay on your local machine, follow these steps:

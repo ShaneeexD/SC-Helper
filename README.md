@@ -18,7 +18,7 @@ A simple, transparent Electron-based overlay for Star Citizen. It provides quick
 
 ![alt text](image-2.png)
 
-## Installation
+## Installation (From source)
 
 To run this overlay on your local machine, follow these steps:
 
